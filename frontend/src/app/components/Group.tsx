@@ -1,7 +1,6 @@
-// components/Group.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import GroupBet from './group-bet';
 
 type GroupType = {
@@ -17,18 +16,68 @@ type GroupType = {
   }[];
 };
 
+type BetType = {
+  _id: string;
+  description: string;
+  amount: number;
+  deadline: string;
+  placedBy: { _id: string; username: string };
+  authorized: { _id: string; username: string }[];
+};
+
 export default function Group({ group, onBack }: { group: GroupType; onBack: () => void }) {
   const [placeBet, setPlaceBet] = useState(false);
+  const [bets, setBets] = useState<BetType[]>([]);
+  const [loadingBets, setLoadingBets] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+
+  const fetchBets = async () => {
+    setLoadingBets(true);
+    setError(null);
+    try {
+      const res = await fetch(`http://localhost:5000/bets/group-bets?group=${group._id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to fetch bets');
+      }
+
+      setBets(data);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An error occurred while fetching bets.');
+      }
+    } finally {
+      setLoadingBets(false);
+    }
+  };
+
+  useEffect(() => {
+      fetchBets();
+  }, []);
+
+  const handleBetAdded = () => {
+    fetchBets(); // Re-fetch bets after adding a new one
+  };
+
   return (
     <div className="group-details">
       <button onClick={onBack} className="back-button">← Back to Groups</button>
       <h2>{group.name}</h2>
       <p>{group.description || 'No description provided.'}</p>
 
-      <h3>
+      <div>
         {placeBet ? (
           <>
-            <GroupBet />
+            <GroupBet group={group} onBetAdded={handleBetAdded}/>
             <button onClick={() => setPlaceBet(false)} className="cancel-button">
               Cancel
             </button>
@@ -38,7 +87,7 @@ export default function Group({ group, onBack }: { group: GroupType; onBack: () 
             Place Bet
           </button>
         )}
-      </h3>
+      </div>
 
       <h3>Members</h3>
       <ul>
@@ -48,6 +97,23 @@ export default function Group({ group, onBack }: { group: GroupType; onBack: () 
           </li>
         ))}
       </ul>
+
+      <h3>Active Bets</h3>
+      {loadingBets ? (
+        <p>Loading bets...</p>
+      ) : error ? (
+        <p style={{ color: 'red' }}>{error}</p>
+      ) : bets.length === 0 ? (
+        <p>No active bets available.</p>
+      ) : (
+        <ul>
+          {bets.map(bet => (
+            <li key={bet._id}>
+              <strong>{bet.description}</strong> — Amount: {bet.amount} — Placed by: {bet.placedBy.username} — Deadline: {new Date(bet.deadline).toLocaleDateString()}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

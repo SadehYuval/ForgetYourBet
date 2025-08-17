@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
 interface PersonalBetProps {
-  onBetAdded: () => void;
+  onBetAdded?: () => void; // Optional depending where you render it from (PlaceBet or personal-info)
 }
+
 export default function PersonalBet({ onBetAdded }: PersonalBetProps) {
   const [form, setForm] = useState({
     placedBy: '',
@@ -24,19 +25,20 @@ export default function PersonalBet({ onBetAdded }: PersonalBetProps) {
       amount: Number(form.amount),
       deadline: new Date(form.deadline),
     };
+
     const token = localStorage.getItem('token');
     const res = await fetch('http://localhost:5000/bets/place-bet', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json'
-        , Authorization: `Bearer ${token}`
-       },
-      
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
       body: JSON.stringify(payload),
     });
 
     if (res.ok) {
       setForm({ placedBy: '', description: '', amount: '', deadline: '' });
-      onBetAdded(); 
+      onBetAdded?.(); // Safe optional call
     } else {
       const data = await res.json();
       alert('Error: ' + data.error);

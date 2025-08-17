@@ -50,4 +50,29 @@ router.get('/personal-bets', authMiddleware ,async (req, res) => {
   }
 });
 
+router.get('/group-bets', authMiddleware, async (req, res) => {
+  try {
+    const group = req.query.group as string;
+    const userId = req.userId;
+
+    if (!group) return res.status(400).json({ error: 'Group is required' });
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const bets = await Bet.find({
+      type: 'group',
+      group,
+      status: 'active',
+      authorized: userId, // Only bets where user is authorized
+    })
+      .populate('placedBy', 'email username')
+      .populate('group', 'name description')
+      .lean();
+
+    res.status(200).json(bets);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
+
 export default router;

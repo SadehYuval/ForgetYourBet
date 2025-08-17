@@ -1,0 +1,3 @@
+atlasDB username : ysadeh75
+atlasDB password : aE1kLDG7oci7Zafb
+connection link: mongodb+srv://ysadeh75:aE1kLDG7oci7Zafb@fybdatabase.vacimzj.mongodb.net/
