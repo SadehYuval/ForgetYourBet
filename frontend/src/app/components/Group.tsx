@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import GroupBet from './group-bet';
+import UserSearch from './UserSearch';
+import RemoveMembers from './RemoveMembers';
 
 type GroupType = {
   _id: string;
@@ -29,6 +31,8 @@ export default function Group({ group, onBack }: { group: GroupType; onBack: () 
   const [placeBet, setPlaceBet] = useState(false);
   const [bets, setBets] = useState<BetType[]>([]);
   const [loadingBets, setLoadingBets] = useState(true);
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [showRemoveMembers, setShowRemoveMembers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -68,6 +72,12 @@ export default function Group({ group, onBack }: { group: GroupType; onBack: () 
     fetchBets(); // Re-fetch bets after adding a new one
   };
 
+  const handleMembershipChange = () => {
+    setShowAddUser(false);
+    setShowRemoveMembers(false);
+    fetchBets(); // Re-fetch bets to update members
+  };
+
   return (
     <div className="group-details">
       <button onClick={onBack} className="back-button">← Back to Groups</button>
@@ -89,14 +99,42 @@ export default function Group({ group, onBack }: { group: GroupType; onBack: () 
         )}
       </div>
 
-      <h3>Members</h3>
-      <ul>
-        {group.members.map((member, idx) => (
-          <li key={idx}>
-            Username: {member.user.username} — Balance: {member.balance}
-          </li>
-        ))}
-      </ul>
+            <h3>Members</h3>
+      <div>
+        {!showAddUser && !showRemoveMembers && (
+          <>
+            <button onClick={() => setShowAddUser(true)}>Add Member</button>
+            <button onClick={() => setShowRemoveMembers(true)}>Remove Members</button>
+          </>
+        )}
+        
+        {showAddUser && (
+          <UserSearch
+            groupId={group._id}
+            onUserAdded={handleMembershipChange}
+            onCancel={() => setShowAddUser(false)}
+          />
+        )}
+        
+        {showRemoveMembers && (
+          <RemoveMembers
+            groupId={group._id}
+            members={group.members}
+            onMemberRemoved={handleMembershipChange}
+            onCancel={() => setShowRemoveMembers(false)}
+          />
+        )}
+      </div>
+
+      {!showAddUser && !showRemoveMembers && (
+        <ul>
+          {group.members.map((member) => (
+            <li key={member.user._id}>
+              {member.user.username} - Balance: {member.balance}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <h3>Active Bets</h3>
       {loadingBets ? (

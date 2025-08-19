@@ -14,6 +14,7 @@ router.post('/place-bet', authMiddleware, async (req, res) => {
 
   // Simple validation examples:
   if (data.type === 'personal') {
+    data.placedBy = req.userId;
     if (!data.description || !data.amount || !data.deadline) {
       return res.status(400).json({ error: 'Missing fields for personal bet' });
     }
@@ -22,8 +23,7 @@ router.post('/place-bet', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Missing fields for group bet' });
     }
   }
-
-  data.placedBy = req.userId;
+  
   try {
     const bet = new Bet(data);
     await bet.save();

@@ -4,6 +4,7 @@ import { connectDB } from './db.js';
 import authRouter from './routes/auth.js';
 import betsRouter from './routes/bets.js';
 import groupsRouter from './routes/groups.js';
+import usersRouter from './routes/users.js';
 import { config } from 'dotenv';
 config(); // Load environment variables from .env file
 
@@ -19,6 +20,7 @@ app.get('/', (req, res) => res.send('API running'));
 app.use('/auth', authRouter);
 app.use('/bets', betsRouter);
 app.use('/groups', groupsRouter);
+app.use('/users', usersRouter);
 
 
 const PORT = process.env.PORT || 5000;

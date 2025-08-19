@@ -26,6 +26,7 @@ type GroupsProps = {
 export default function Groups({ groups, loading, error }: GroupsProps) {
   const [selectedGroup, setSelectedGroup] = useState<GroupType | null>(null);
 
+
   return (
     <>
       <h2>My Groups</h2>
