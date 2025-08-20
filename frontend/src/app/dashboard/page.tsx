@@ -42,30 +42,75 @@ export default function DashboardPage() {
     }
   }, [router]);
 
-  useEffect(() => {
-    async function fetchGroups() {
-      setLoadingGroups(true);
-      setGroupError(null);
-      try {
-        const res = await fetch('http://localhost:5000/groups/my-groups', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+  // Define fetchGroups outside useEffect
+  const fetchGroups = async () => {
+    setLoadingGroups(true);
+    setGroupError(null);
+    try {
+      const res = await fetch('http://localhost:5000/groups/my-groups', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
 
-        if (!res.ok) throw new Error('Failed to fetch groups');
-
-        const data: GroupType[] = await res.json();
-        setGroups(data);
-      } catch (err) {
-        setGroupError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoadingGroups(false);
+      if (!res.ok) {
+        let errorMsg = 'Failed to fetch groups';
+        try {
+          const errorData = await res.json();
+          if (errorData && errorData.message) {
+            errorMsg = errorData.message;
+          }
+        } catch {
+          // ignore JSON parse errors
+        }
+        throw new Error(errorMsg);
       }
-    }
 
+      const data: GroupType[] = await res.json();
+      setGroups(data);
+    } catch (err) {
+      setGroupError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  useEffect(() => {
     if (token) fetchGroups();
   }, [token]);
 
   if (!user) return <p>Loading dashboard...</p>;
+
+  const handleGroupUpdate = async (groupId: string) => {
+    try {
+      const res = await fetch(`http://localhost:5000/groups/${groupId}/get-group`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        method: 'GET',
+      });
+      if (!res.ok) {
+        throw new Error('Failed to update groups');
+      }
+      const updatedGroup: GroupType = await res.json();
+      setGroups(prevGroups => 
+        prevGroups.map(group => group._id === updatedGroup._id ? updatedGroup : group)
+      );
+      
+    } catch (err) {
+      console.error('Failed to update groups:', err);
+      setGroupError('Failed to update groups');
+    } 
+  }
+
+  const handleGroupAddition = async () => {
+    try {
+      await fetchGroups();
+    }
+    catch (err) {
+      console.error('Failed to refresh groups:', err);
+      setGroupError('Failed to refresh groups');
+    }
+  }
 
   return (
     <div className="dashboard-container">
@@ -93,6 +138,8 @@ export default function DashboardPage() {
             groups={groups}
             loading={loadingGroups}
             error={groupError}
+            onGroupUpdate={handleGroupUpdate}
+            onGroupAddition={handleGroupAddition}
           />
         )}
         {activeTab === 'place-bet' && <PlaceBet groups={groups}/>}

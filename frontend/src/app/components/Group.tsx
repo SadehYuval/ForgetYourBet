@@ -27,7 +27,7 @@ type BetType = {
   authorized: { _id: string; username: string }[];
 };
 
-export default function Group({ group, onBack }: { group: GroupType; onBack: () => void }) {
+export default function Group({ group, onBack, onGroupUpdate }: { group: GroupType; onBack: () => void; onGroupUpdate: (groupId: string) => void }) {
   const [placeBet, setPlaceBet] = useState(false);
   const [bets, setBets] = useState<BetType[]>([]);
   const [loadingBets, setLoadingBets] = useState(true);
@@ -75,6 +75,7 @@ export default function Group({ group, onBack }: { group: GroupType; onBack: () 
   const handleMembershipChange = () => {
     setShowAddUser(false);
     setShowRemoveMembers(false);
+    onGroupUpdate(group._id); // Notify parent component to update group data
     fetchBets(); // Re-fetch bets to update members
   };
 

@@ -5,27 +5,6 @@ import { User } from '../models/User.js';
 
 const router = express.Router();
 
-router.get('/group', authMiddleware, async (req, res) => {
-  try {
-    const groupId = req.query.groupId as string;
-    if (!groupId) {
-      return res.status(400).json({ error: 'groupId is required' });
-    }
-
-    const group = await Group.findById(groupId)
-      .populate('members.user', 'username email')
-      .lean();
-
-    if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
-    }
-
-    res.status(200).json(group);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || 'Internal server error' });
-  }
-});
-
 router.get('/my-groups', authMiddleware, async (req, res) => {
     try{
         const userId = req.userId;
@@ -42,6 +21,38 @@ router.get('/my-groups', authMiddleware, async (req, res) => {
     }
 
 });
+
+router.get('/:groupId/get-group', authMiddleware, async (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const group = await Group.findById(groupId)
+      .populate('members.user', 'username email')
+      .lean();
+
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    const isMember = group.members.some(
+      (member: any) => member.user && member.user._id.toString() === userId
+    );
+
+    if (!isMember) {
+      return res.status(403).json({ error: 'You are not a member of this group' });
+    }
+
+    res.json(group);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
 
 router.post('/create-group', authMiddleware, async (req, res) => {
     try {

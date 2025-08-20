@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-export default function CreateGroup({token} : {token: string}) {
+export default function CreateGroup({ onGroupAddition }: { onGroupAddition: () => void }) {
+  const token = localStorage.getItem('token');
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -34,6 +35,7 @@ export default function CreateGroup({token} : {token: string}) {
       const data = await res.json();
       alert('Error: ' + data.error);
     }
+    onGroupAddition();
   };
 
   return (
